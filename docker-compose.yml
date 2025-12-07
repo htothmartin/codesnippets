@@ -1,0 +1,33 @@
+services:
+  database:
+    image: mongo:8.2.2
+    container_name: database
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=dev
+      - MONGO_INITDB_ROOT_PASSWORD=passwd
+    ports: 
+      - "27017:27017"
+    volumes: 
+      - mongo_data:/data/db
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://dev:passwd@database:27017/codesnippet?authSource=admin
+      - FLASK_DEBUG=1 
+      - FLASK_APP=app.py
+    volumes:
+      - ./backend:/app
+    command: flask run --host=0.0.0.0 --port=5000
+    depends_on:
+      - database
+
+volumes:
+  mongo_data:
+
+      
