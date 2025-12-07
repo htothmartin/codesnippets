@@ -4,7 +4,7 @@ import SnippetForm from "@/components/SnippetForm";
 export default async function Home() {
   let snippets: Snippet[] = [];
 
-  const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const API_URL = process.env.INTERNAL_API_URL;
 
   try {
     const res = await fetch(`${API_URL}/api/snippets`, { cache: "no-store" });

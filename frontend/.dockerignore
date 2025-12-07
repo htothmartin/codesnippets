@@ -1,0 +1,37 @@
+# Függőségek (Ezt a konténernek kell telepítenie!)
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Next.js build (Ezt is a konténer generálja)
+.next
+out
+
+# Környezeti változók (Ezeket a docker-compose adja át, ne égesd bele a képbe!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git fájlok
+.git
+.gitignore
+
+# IDE beállítások
+.vscode
+.idea
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.sw?
+
+# OS fájlok
+.DS_Store
+Thumbs.db
+
+# Docker fájlok (felesleges magukat a recepteket bemásolni)
+Dockerfile
+Dockerfile.prod

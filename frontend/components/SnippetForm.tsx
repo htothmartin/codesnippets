@@ -15,7 +15,7 @@ export default function SnippetForm() {
     code: "",
   });
 
-  const [isLoading, setIsLoading] = useState(false); // +1: Töltés állapot visszajelzéshez
+  const [isLoading, setIsLoading] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
