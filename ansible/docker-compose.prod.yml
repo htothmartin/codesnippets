@@ -64,6 +64,16 @@ services:
     networks:
       - app_net
 
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - app_net
+
 volumes:
   mongo_prod_data:
 

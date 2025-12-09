@@ -4,3 +4,4 @@ pymongo==4.15.4
 pytest
 pytest-cov
 mongomock
+prometheus-client

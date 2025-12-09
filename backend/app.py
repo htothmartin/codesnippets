@@ -1,14 +1,39 @@
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+
 app = Flask(__name__)
 CORS(app)
+
+#prometheus
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests', ['method', 'endpoint', 'status'])
+REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'HTTP Request Duration', ['method', 'endpoint'])
+
+@app.before_request
+def start_timer():
+    request.start_time = time.time()
+
+@app.after_request
+def record_metrics(response):
+    if hasattr(request, 'start_time'):
+        resp_time = time.time() - request.start_time
+        
+        REQUEST_LATENCY.labels(request.method, request.path).observe(resp_time)
+        REQUEST_COUNT.labels(request.method, request.path, response.status_code).inc()
+    
+    return response
+
+@app.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 mongo_uri = os.environ.get('MONGO_URI')
 
@@ -23,9 +48,6 @@ if os.environ.get('FLASK_ENV') != 'testing':
         print(f"CRITICAL ERROR: Could not connect to MongoDB. Error: {e}")
         sys.exit(1) 
 
-db = client.codesnippet
-snippets_collection = db.snippets_collection
-    
 db = client.codesnippet
 snippets_collection = db.snippets_collection
 
@@ -49,7 +71,7 @@ def create_snippet():
     try:
         result = snippets_collection.insert_one(new_snippet)
         return jsonify({
-            "message": "Sikeres mentes",
+            "message": "Snippet saved succesfully",
             "id": str(result.inserted_id)
         }), 201
     except Exception as e:
