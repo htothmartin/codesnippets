@@ -59,9 +59,9 @@ pipeline {
             steps {
                 script {
                     echo 'Building Frontend Image...'
-                    sh "docker build -t $DOCKER_HUB_USER/my-frontend:latest ./frontend"
+                    sh "docker build -t $DOCKER_HUB_USER/frontend:latest ./frontend"
                     
-                    sh "docker push $DOCKER_HUB_USER/my-frontend:latest"
+                    sh "docker push $DOCKER_HUB_USER/frontend:latest"
                 }
             }
         }
