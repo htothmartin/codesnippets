@@ -66,6 +66,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to GCP') {
+            steps {
+                withCredentials([file(credentialsId: 'gcp-vm-key', variable: 'SSH_KEY')]) {
+                    script {
+                        echo 'Deploying...'
+                        sh 'export ANSIBLE_HOST_KEY_CHECKING=False'
+
+                        sh 'ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/hosts.ini ansible/playbook.yml --private-key $SSH_KEY -u ubuntu'
+                    }
+                }
+            }
+        }
     }
 
     post {
