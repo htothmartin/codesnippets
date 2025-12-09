@@ -1,0 +1,121 @@
+- name: Setup server for devops
+  hosts: webservers
+  become: true
+  vars:
+    mongo_user: admin
+    mongo_pass: secretpassword123
+    project_dir: /home/ubuntu/app
+
+  tasks:
+    - name: Check if swap exists
+      stat:
+        path: /swapfile
+      register: swap_file
+
+    - name: Create swap file
+      command: fallocate -l 4G /swapfile
+      when: not swap_file.stat.exists
+
+    - name: Set swap permissions
+      file:
+        path: /swapfile
+        mode: "0600"
+
+    - name: Format swap file
+      command: mkswap /swapfile
+      when: not swap_file.stat.exists
+
+    - name: Enable swap
+      command: swapon /swapfile
+      when: not swap_file.stat.exists
+
+    - name: Install dependencies
+      apt:
+        name:
+          [
+            "apt-transport-https",
+            "ca-certificates",
+            "curl",
+            "software-properties-common",
+            "gnupg",
+          ]
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          [
+            "docker-ce",
+            "docker-ce-cli",
+            "containerd.io",
+            "docker-compose-plugin",
+          ]
+        state: present
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Copy Nginx config
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify: Restart Nginx
+
+    - name: Remove default Nginx site configuration
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Restart Nginx
+
+    - name: Create app directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Copy Docker Compose file
+      copy:
+        src: docker-compose.prod.yml
+        dest: "{{ project_dir }}/docker-compose.yml"
+
+    - name: Copy Prometheus config
+      copy:
+        src: prometheus.yml
+        dest: "{{ project_dir }}/prometheus.yml"
+
+    - name: Copy .env file with secrets
+      template:
+        src: .env.j2
+        dest: "{{ project_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Pull ONLY Frontend and Backend images
+      command: docker compose pull backend frontend
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Start/Update containers
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_dir }}"
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
