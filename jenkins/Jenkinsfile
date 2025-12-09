@@ -1,0 +1,79 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_USER = "martinkka8"
+        DOCKER_CREDS = credentials('dockerhub-credentials')
+    }
+
+    stages {
+        stage("Checkout") {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Frontend Lint') {
+            steps {
+                script {
+                    echo 'Linting Frontend...'
+                    def dockerfileContent = """
+                        FROM node:24-alpine
+                        WORKDIR /app
+                        COPY package*.json ./
+                        RUN npm ci
+                        COPY . .
+                        RUN npm run lint
+                    """
+                    writeFile file: 'frontend/Dockerfile.lint', text: dockerfileContent
+                    
+                    sh 'docker build -f frontend/Dockerfile.lint -t frontend-linter ./frontend'
+                }
+            }
+        }
+
+        stage("Run backend tests") {
+            steps {
+                script {
+                    echo 'Running Backend Tests...'
+                    sh 'docker build -f backend/Dockerfile.prod -t backend-test-base ./backend'
+                    sh 'docker run --rm backend-test-base sh -c "pip install pytest && pytest"'
+                }
+            }
+        }
+
+        stage('Build & Push Backend') {
+            steps {
+                script {
+                    echo 'Building Backend Image...'
+                    sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
+                    
+                    sh "docker build -f backend/Dockerfile.prod -t $DOCKER_HUB_USER/backend:latest ./backend"
+                    
+                    sh "docker push $DOCKER_HUB_USER/backend:latest"
+                }
+            }
+        }
+
+        stage('Build & Push Frontend') {
+            steps {
+                script {
+                    echo 'Building Frontend Image...'
+                    sh "docker build -t $DOCKER_HUB_USER/my-frontend:latest ./frontend"
+                    
+                    sh "docker push $DOCKER_HUB_USER/my-frontend:latest"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker system prune -f'
+            sh 'rm -f frontend/Dockerfile.lint'
+        }
+        failure {
+            echo 'Pipeline failed'
+        }
+    }
+}
