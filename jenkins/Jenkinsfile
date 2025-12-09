@@ -59,7 +59,8 @@ pipeline {
             steps {
                 script {
                     echo 'Building Frontend Image...'
-                    sh "docker build -t $DOCKER_HUB_USER/frontend:latest ./frontend"
+
+                    sh "docker build --build-arg NEXT_PUBLIC_BACKEND_URL=${params.NEXT_PUBLIC_BACKEND_URL} -t $DOCKER_HUB_USER/frontend:latest ./frontend"
                     
                     sh "docker push $DOCKER_HUB_USER/frontend:latest"
                 }
