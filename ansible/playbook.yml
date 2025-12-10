@@ -1,5 +1,5 @@
 - name: Setup server for devops
-  hosts: webservers
+  hosts: all
   become: true
   vars:
     mongo_user: admin
