@@ -74,7 +74,7 @@ pipeline {
                         echo 'Deploying...'
                         sh 'export ANSIBLE_HOST_KEY_CHECKING=False'
 
-                        sh 'ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/hosts.ini ansible/playbook.yml --private-key $SSH_KEY -u ubuntu'
+                        sh 'ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i "${TARGET_IP}," ansible/playbook.yml --private-key $SSH_KEY -u ubuntu'
                     }
                 }
             }
